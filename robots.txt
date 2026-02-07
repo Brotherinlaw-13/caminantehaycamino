@@ -1,0 +1,11 @@
+# Robots.txt for Caminante No Hay Camino
+# https://www.caminantenohaycamino.com
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.caminantenohaycamino.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
