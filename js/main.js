@@ -1,27 +1,28 @@
 /**
- * Caminante No Hay Camino - Main JavaScript
- * Lightweight, vanilla JS for filtering and interactions
+ * Caminante No Hay Camino - Enhanced UX JavaScript
+ * Smooth animations, filtering, and interactions
  */
 
 (function() {
     'use strict';
 
-    // DOM Ready
     document.addEventListener('DOMContentLoaded', init);
 
     function init() {
         initFilters();
-        initCurrentYear();
+        initScrollAnimations();
         initSmoothScroll();
-        initLazyLoading();
+        initCurrentYear();
+        initParallax();
     }
 
     /**
-     * Trip Filtering Functionality
+     * Trip Filtering with smooth animations
      */
     function initFilters() {
         const filterButtons = document.querySelectorAll('.filter-btn');
         const tripCards = document.querySelectorAll('.trip-card');
+        const grid = document.querySelector('.trips-grid');
 
         if (!filterButtons.length || !tripCards.length) return;
 
@@ -29,33 +30,63 @@
             button.addEventListener('click', () => {
                 const filter = button.dataset.filter;
 
-                // Update active button
+                // Update active state
                 filterButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
-                // Filter cards
-                tripCards.forEach(card => {
-                    const year = card.dataset.year;
-                    const shouldShow = filter === 'all' || year === filter;
-                    
-                    card.classList.toggle('hidden', !shouldShow);
-                    
-                    // Add fade animation
-                    if (shouldShow) {
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px)';
-                        requestAnimationFrame(() => {
-                            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                            card.style.opacity = '1';
-                            card.style.transform = 'translateY(0)';
-                        });
-                    }
-                });
+                // Animate grid
+                if (grid) {
+                    grid.style.opacity = '0.5';
+                    grid.style.transform = 'scale(0.98)';
+                }
 
-                // Announce to screen readers
-                announceFilter(filter, tripCards);
+                setTimeout(() => {
+                    // Filter cards
+                    let visibleIndex = 0;
+                    tripCards.forEach(card => {
+                        const year = card.dataset.year;
+                        const shouldShow = filter === 'all' || year === filter;
+                        
+                        if (shouldShow) {
+                            card.classList.remove('hidden');
+                            card.style.animationDelay = `${visibleIndex * 50}ms`;
+                            card.style.animation = 'fadeInCard 0.5s ease forwards';
+                            visibleIndex++;
+                        } else {
+                            card.classList.add('hidden');
+                        }
+                    });
+
+                    // Restore grid
+                    if (grid) {
+                        grid.style.opacity = '1';
+                        grid.style.transform = 'scale(1)';
+                    }
+
+                    // Announce to screen readers
+                    announceFilter(filter, tripCards);
+                }, 150);
             });
         });
+
+        // Add animation keyframes dynamically
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInCard {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            .trips-grid {
+                transition: opacity 0.15s ease, transform 0.15s ease;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
@@ -67,7 +98,6 @@
             ? `Mostrando todos los ${visibleCount} viajes`
             : `Mostrando ${visibleCount} viajes de ${filter}`;
         
-        // Create or update live region
         let liveRegion = document.getElementById('filter-announcement');
         if (!liveRegion) {
             liveRegion = document.createElement('div');
@@ -81,17 +111,52 @@
     }
 
     /**
-     * Update current year in footer
+     * Scroll-triggered animations
      */
-    function initCurrentYear() {
-        const yearElement = document.getElementById('current-year');
-        if (yearElement) {
-            yearElement.textContent = new Date().getFullYear();
-        }
+    function initScrollAnimations() {
+        // Add fade-in class to animatable elements
+        const animatableSelectors = [
+            '.section-title',
+            '.about-text',
+            '.about-highlights',
+            '.highlight-item',
+            '.featured-card',
+            '.trip-card',
+            '.camino-text',
+            '.camino-routes',
+            '.stat-item',
+            '.aboutus-content > *',
+            '.cta-text'
+        ];
+
+        const elements = document.querySelectorAll(animatableSelectors.join(', '));
+        
+        elements.forEach((el, index) => {
+            el.classList.add('fade-in');
+            el.style.transitionDelay = `${Math.min(index % 6, 4) * 100}ms`;
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -80px 0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        elements.forEach(el => observer.observe(el));
     }
 
     /**
-     * Smooth scroll for internal links
+     * Smooth scroll for anchor links
      */
     function initSmoothScroll() {
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -102,67 +167,77 @@
                 const target = document.querySelector(targetId);
                 if (target) {
                     e.preventDefault();
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
+                    
+                    const headerOffset = 80;
+                    const elementPosition = target.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
                     });
                     
-                    // Update focus for accessibility
+                    // Update focus
                     target.setAttribute('tabindex', '-1');
-                    target.focus();
+                    target.focus({ preventScroll: true });
                 }
             });
         });
     }
 
     /**
-     * Enhanced lazy loading with Intersection Observer
+     * Update year in footer
      */
-    function initLazyLoading() {
-        // Check for native lazy loading support
-        if ('loading' in HTMLImageElement.prototype) {
-            // Browser supports native lazy loading
-            return;
-        }
-
-        // Fallback for older browsers
-        const images = document.querySelectorAll('img[loading="lazy"]');
-        
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src || img.src;
-                        observer.unobserve(img);
-                    }
-                });
-            }, {
-                rootMargin: '50px 0px',
-                threshold: 0.01
-            });
-
-            images.forEach(img => imageObserver.observe(img));
+    function initCurrentYear() {
+        const yearElement = document.getElementById('current-year');
+        if (yearElement) {
+            yearElement.textContent = new Date().getFullYear();
         }
     }
 
     /**
-     * Simple analytics event tracking (if analytics is present)
+     * Subtle parallax on hero
      */
-    function trackEvent(action, category, label) {
-        if (typeof gtag === 'function') {
-            gtag('event', action, {
-                event_category: category,
-                event_label: label
-            });
-        }
+    function initParallax() {
+        const hero = document.querySelector('.hero');
+        if (!hero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        let ticking = false;
+
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    const scrolled = window.pageYOffset;
+                    const heroHeight = hero.offsetHeight;
+                    
+                    if (scrolled < heroHeight) {
+                        const opacity = 1 - (scrolled / heroHeight) * 0.5;
+                        const heroContent = hero.querySelector('.hero-content');
+                        if (heroContent) {
+                            heroContent.style.opacity = opacity;
+                            heroContent.style.transform = `translateY(${scrolled * 0.3}px)`;
+                        }
+                    }
+                    
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
     }
 
-    // Track outbound link clicks
+    /**
+     * Track outbound links
+     */
     document.addEventListener('click', function(e) {
         const link = e.target.closest('a[href^="http"]');
         if (link && !link.href.includes(window.location.hostname)) {
-            trackEvent('click', 'outbound', link.href);
+            if (typeof gtag === 'function') {
+                gtag('event', 'click', {
+                    event_category: 'outbound',
+                    event_label: link.href
+                });
+            }
         }
     });
 
