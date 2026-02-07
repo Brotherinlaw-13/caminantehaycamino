@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import trips from '../data/trips.json';
+
+// Sort by year descending
+const sortedTrips = [...trips].sort((a, b) => b.year - a.year);
+---
+
+<BaseLayout title="Caminante No Hay Camino | Blog de Viajes por el Mundo">
+  <section class="hero">
+    <h1>Bienvenidos a nuestro blog de viajes</h1>
+    <p>Un grupo de amigos gallegos explorando el mundo desde 2011</p>
+  </section>
+  
+  <section class="trips-grid">
+    <div class="container">
+      <h2>Todos nuestros viajes</h2>
+      <p class="section-subtitle">Más de una década de aventuras por el mundo</p>
+      
+      <div class="grid">
+        {sortedTrips.map(trip => (
+          <a href={`/viaje/${trip.slug}/`} class="trip-card">
+            <div class="card-image">
+              <span class="card-year">{trip.year}</span>
+            </div>
+            <div class="card-content">
+              <h3>{trip.title}</h3>
+              <span class="card-country">{trip.country}</span>
+              <p>{trip.description}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .hero p { color: rgba(255,255,255,0.7); font-size: 1.2rem; font-weight: 300; }
+  
+  .trips-grid { padding: 3rem 2rem; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .trips-grid h2 { text-align: center; font-size: 2rem; margin-bottom: 0.3rem; }
+  .section-subtitle { text-align: center; color: var(--color-text-light); margin-bottom: 2.5rem; }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .trip-card {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: var(--color-text);
+    text-decoration: none;
+    display: block;
+  }
+  .trip-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); text-decoration: none; }
+  
+  .card-image {
+    height: 180px;
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 1rem;
+    position: relative;
+  }
+  .card-year {
+    background: var(--color-accent);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  
+  .card-content { padding: 1.2rem; }
+  .card-content h3 { font-size: 1.3rem; margin-bottom: 0.3rem; }
+  .card-country { color: var(--color-accent); font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 0.5rem; }
+  .card-content p { color: var(--color-text-light); font-size: 0.9rem; line-height: 1.5; }
+  
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.8rem; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>

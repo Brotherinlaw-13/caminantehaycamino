@@ -1,0 +1,138 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import trips from '../../data/trips.json';
+import fs from 'node:fs';
+import path from 'node:path';
+import { marked } from 'marked';
+
+export function getStaticPaths() {
+  return trips.map(trip => ({
+    params: { slug: trip.slug },
+    props: { trip }
+  }));
+}
+
+const { trip } = Astro.props;
+
+// Read all post markdown files for this trip
+const contentDir = path.join(process.cwd(), 'src', 'content', trip.slug);
+let posts: Array<{title: string; date: string; content: string; order: number}> = [];
+
+if (fs.existsSync(contentDir)) {
+  const files = fs.readdirSync(contentDir).filter(f => f.endsWith('.md')).sort();
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(contentDir, file), 'utf-8');
+    // Parse simple frontmatter
+    const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    if (fmMatch) {
+      const fm = fmMatch[1];
+      const content = fmMatch[2];
+      const titleMatch = fm.match(/title:\s*"(.+?)"/);
+      const dateMatch = fm.match(/date:\s*"(.+?)"/);
+      const orderMatch = fm.match(/order:\s*(\d+)/);
+      posts.push({
+        title: titleMatch ? titleMatch[1] : file,
+        date: dateMatch ? dateMatch[1] : '',
+        content,
+        order: orderMatch ? parseInt(orderMatch[1]) : 0
+      });
+    }
+  }
+  posts.sort((a, b) => a.order - b.order);
+}
+
+// Convert markdown content to HTML
+function markdownToHtml(md: string): string {
+  return marked.parse(md, { async: false }) as string;
+}
+---
+
+<BaseLayout title={`${trip.title} - Caminante No Hay Camino`} description={trip.description}>
+  <article class="trip-page">
+    <div class="trip-header">
+      <div class="trip-meta">
+        <span class="trip-year">{trip.year}</span>
+        <span class="trip-country">{trip.country}</span>
+      </div>
+      <h1>{trip.title}</h1>
+      <p class="trip-description">{trip.description}</p>
+      <a href="/" class="back-link">← Volver a todos los viajes</a>
+    </div>
+    
+    <div class="trip-content">
+      {posts.length === 0 && (
+        <p class="no-content">Contenido próximamente...</p>
+      )}
+      {posts.map((post, i) => (
+        <section class="post-section">
+          {post.title && <h2 class="post-title">{post.title}</h2>}
+          {post.date && <time class="post-date">{post.date}</time>}
+          <div class="post-body" set:html={markdownToHtml(post.content)} />
+          {i < posts.length - 1 && <hr class="post-divider" />}
+        </section>
+      ))}
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .trip-page { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+  
+  .trip-header {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2rem;
+  }
+  .trip-meta { margin-bottom: 1rem; }
+  .trip-year {
+    background: var(--color-accent);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+  }
+  .trip-country { color: var(--color-text-light); font-size: 0.95rem; }
+  .trip-header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .trip-description { color: var(--color-text-light); font-size: 1.1rem; }
+  .back-link { display: inline-block; margin-top: 1rem; font-size: 0.9rem; }
+  
+  .trip-content { padding-bottom: 3rem; }
+  
+  .post-section { margin-bottom: 2rem; }
+  .post-title { font-size: 1.8rem; margin-bottom: 0.3rem; color: var(--color-dark); }
+  .post-date { color: var(--color-text-light); font-size: 0.9rem; display: block; margin-bottom: 1rem; }
+  
+  .post-body :global(p) { margin-bottom: 1rem; font-size: 1.05rem; }
+  .post-body :global(img) {
+    width: 100%;
+    border-radius: 8px;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .post-body :global(h3) { font-family: var(--font-heading); font-size: 1.4rem; margin: 1.5rem 0 0.5rem; }
+  .post-body :global(h4) { font-family: var(--font-heading); font-size: 1.2rem; margin: 1.2rem 0 0.5rem; }
+  .post-body :global(blockquote) {
+    border-left: 3px solid var(--color-accent);
+    padding-left: 1rem;
+    color: var(--color-text-light);
+    font-style: italic;
+    margin: 1rem 0;
+  }
+  
+  .post-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 3rem auto;
+    max-width: 200px;
+  }
+  
+  .no-content { text-align: center; color: var(--color-text-light); padding: 3rem 0; font-style: italic; }
+  
+  @media (max-width: 768px) {
+    .trip-header h1 { font-size: 1.8rem; }
+    .post-title { font-size: 1.4rem; }
+  }
+</style>

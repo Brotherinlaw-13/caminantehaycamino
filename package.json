@@ -1,0 +1,27 @@
+{
+  "name": "caminante-blog",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brotherinlaw-13/caminantehaycamino.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Brotherinlaw-13/caminantehaycamino/issues"
+  },
+  "homepage": "https://github.com/Brotherinlaw-13/caminantehaycamino#readme",
+  "dependencies": {
+    "astro": "^5.17.1",
+    "cheerio": "^1.2.0",
+    "marked": "^17.0.1"
+  }
+}
